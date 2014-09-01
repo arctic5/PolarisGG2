@@ -12,21 +12,21 @@ global serverSocket
 global attemptPortForward
 global hostingPort
 
-hostingPort = 8090
+hostingPort = 8190
 attemptPortForward = 1
 
 class GameServer:
     def __init__(self):
-        if (attemptPortForward == 1):
-            upnp_set_description("GG2 (TCP)")
-            discovery_error = upnp_discover(2000)
+        # if (attemptPortForward == 1):
+            # upnp_set_description("GG2 (TCP)")
+            # discovery_error = upnp_discover(2000)
         
-        if (upnp_error_string(discovery_error) != ""):
-            print upnp_error_string(discovery_error)
-        else:
-            forwarding_error = upnp_forward_port(str(hostingPort), str(hostingPort), "TCP", "0")
-            if (upnp_error_string(forwarding_error) != ""):
-                print upnp_error_string(forwarding_error)
+        # if (upnp_error_string(discovery_error) != ""):
+            # print upnp_error_string(discovery_error)
+        # else:
+            # forwarding_error = upnp_forward_port(str(hostingPort), str(hostingPort), "TCP", "0")
+            # if (upnp_error_string(forwarding_error) != ""):
+                # print upnp_error_string(forwarding_error)
         players = []
         tcpListener = -1
         serverSocket = -1

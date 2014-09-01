@@ -1,4 +1,5 @@
 from constants import *
+from array import *
 
 class Player:
     def __init__(self):
@@ -8,7 +9,8 @@ class Player:
         socket = -1
         name = ""
         kicked = False
-        stats = []
+        stats = dict()
+        roundStats = dict()
         #client setting stuff set to defaults
         queueJump = False
 
