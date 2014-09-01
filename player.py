@@ -1,5 +1,4 @@
 from constants import *
-from array import *
 
 class Player:
     def __init__(self):
