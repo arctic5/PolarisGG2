@@ -1,0 +1,1 @@
+some shitty server thing that uses the faucetnet dll because i dont feel like learning the python functions

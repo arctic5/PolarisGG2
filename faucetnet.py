@@ -11,6 +11,9 @@ def buffer_create():
     
 def tcp_listen(port):
     return faucetnet.tcp_listen(port)
+
+def tcp_connect(ip, port):
+    return c_double(faucetnet.tcp_connect(ip, port))
     
 def socket_has_error(handle):
     return c_double(faucetnet.socket_has_error(handle))
@@ -19,8 +22,15 @@ def socket_error(handle):
     faucetnet.socket_error.restype = c_char_p
     return faucetnet.socket_error(handle)
 
-def tcp_connect(ip, port):
-    return c_double(faucetnet.tcp_connect(ip, port))
+def socket_accept(handle):
+    faucetnet.socket_accept.restype = c_double
+    return faucetnet.socket_accept(handle)
+    
+def socket_send(handle):
+    return c_double(faucetnet.socket_send(handle))
+
+def socket_destroy(handle):
+    return c_double(faucetnet.socket_destroy(handle))
     
 def write_ubyte(handle, value):
     return c_double(faucetnet.write_ubyte(handle, value))
@@ -31,16 +41,18 @@ def write_ushort(handle, value):
 def write_string(handle, value):
     return c_double(faucetnet.write_string(handle, value))
     
+def write_buffer(destHandle, bufferHandle):
+    return c_double(faucetnet.write_buffer(destHandle, bufferHandle))
+    
+def buffer_destroy(bufferHandle):
+    return c_double(faucetnet.buffer_destroy(bufferHandle))
+    
 def udp_send(handle, host, port):
     return c_double(faucetnet.udp_send(handle, host, port))
     
 def set_little_endian(handle, littleEndian):
     return c_double(faucetnet.set_little_endian(handle, littleEndian))
     
-def write_buffer(destHandle, bufferHandle):
-    return c_double(faucetnet.write_buffer(destHandle, bufferHandle))
-def buffer_destroy(bufferHandle):
-    return c_double(faucetnet.buffer_destroy(bufferHandle))
     
     
     

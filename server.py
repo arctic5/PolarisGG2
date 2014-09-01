@@ -3,9 +3,9 @@ from forwarding import *
 from faucetnet import *
 from random import randint
 from player import *
-import uuid
+import constants
 
-gg2dll = cdll.LoadLibrary("GG2DLL.dll")
+#gg2dll = cdll.LoadLibrary("GG2DLL.dll")
 
 global players
 global tcpListener
@@ -13,26 +13,31 @@ global serverSocket
 global attemptPortForward
 global hostingPort
 global gg2lobbyId
+global protocolUuid
+
+protocolUuid = buffer_create()
+parseUuid(constants.PROTOCOL_UUID, protocolUuid) 
 
 gg2lobbyId = buffer_create()
+parseUuid(constants.GG2_LOBBY_UUID, gg2lobbyId)
 
 hostingPort = 8190
 attemptPortForward = 1
 
 class GameServer:
     def __init__(self):
-        # if (attemptPortForward == 1):
-            # upnp_set_description("GG2 (TCP)")
-            # discovery_error = upnp_discover(2000)
-        
-        # if (upnp_error_string(discovery_error) != ""):
-            # print upnp_error_string(discovery_error)
-        # else:
-            # forwarding_error = upnp_forward_port(str(hostingPort), str(hostingPort), "TCP", "0")
-            # if (upnp_error_string(forwarding_error) != ""):
-                # print upnp_error_string(forwarding_error)
-        players = []
         tcpListener = -1
+        if (attemptPortForward == 1):
+            upnp_set_description("GG2 (TCP)")
+            discovery_error = upnp_discover(2000)
+        
+        if (upnp_error_string(discovery_error) != ""):
+            print upnp_error_string(discovery_error)
+        else:
+            forwarding_error = upnp_forward_port(str(hostingPort), str(hostingPort), "TCP", "0")
+            if (upnp_error_string(forwarding_error) != ""):
+                print upnp_error_string(forwarding_error)
+        players = []
         serverSocket = -1
         
         serverId = buffer_create()
@@ -59,45 +64,52 @@ class GameServer:
         
         players.append(serverPlayer)
         
-        tcpListener = tcp_listen(hostingPort)
-        if(socket_has_error(tcpListener)==True):
-            print "Unable to host:",socket_error(tcpListener)
+        self.tcpListener = tcp_listen(hostingPort)
+        if(socket_has_error(self.tcpListener)==True):
+            print "Unable to host:",socket_error(self.tcpListener)
             
         serverSocket = tcp_connect("127.0.0.1", hostingPort)
         
         if(socket_has_error(serverSocket)==True):
             print "Unable to connect to self. Epic fail, dude."
-    def GameServerStep(self):
-        lobbyBuffer = buffer_create();
-        #TODO set_little_endian
+        print "serving on port:",hostingPort
+    def GameServerBeginStep(self):
+        lobbyBuffer = buffer_create()
         set_little_endian(lobbyBuffer, False)
         
         parseUuid("b5dae2e8-424f-9ed0-0fcb-8c21c7ca1352", lobbyBuffer)
         write_buffer(lobbyBuffer, 1)
         write_buffer(lobbyBuffer, gg2lobbyId)
         write_ubyte(lobbyBuffer, 0) # TCP
-        write_ushort(lobbyBuffer, hostingPort)
-        write_ushort(lobbyBuffer, 1337)
-        write_ushort(lobbyBuffer, 1337)
-        write_ushort(lobbyBuffer, 1)
-        write_ushort(lobbyBuffer, 7)
-        writeKeyValue(lobbyBuffer, "name", "POLARIS")
-        writeKeyValue(lobbyBuffer, "game", "POLARIS")
-        writeKeyValue(lobbyBuffer, "game_short", "POLARIS")
+        write_ushort(lobbyBuffer, hostingPort) # playerLimit
+        write_ushort(lobbyBuffer, 1337) # noOfPlayers
+        write_ushort(lobbyBuffer, 1337) # Number of bots
+        write_ushort(lobbyBuffer, 1) # serverPassword
+        write_ushort(lobbyBuffer, 7) # Number of Key/Value pairs that follow
+        writeKeyValue(lobbyBuffer, "name", "POLARIS") # serverName
+        writeKeyValue(lobbyBuffer, "game", "POLARIS") #GAME_NAME_STRING
+        writeKeyValue(lobbyBuffer, "game_short", "POLARIS") 
         writeKeyValue(lobbyBuffer, "game_ver", "4654765")
         writeKeyValue(lobbyBuffer, "game_url", "1337")
         writeKeyValue(lobbyBuffer, "map", "GAY_GAY")
         write_ubyte(lobbyBuffer, len("protocol_id"))
         write_string(lobbyBuffer, "protocol_id")
         write_ushort(lobbyBuffer, 16)
-        write_buffer(lobbyBuffer, "de7d74f8-455c-bc1b-3731-0519c44356dc")
+        parseUuid("de7d74f8-455c-bc1b-3731-0519c44356dc", lobbyBuffer)
         
-        udp_send(lobbyBuffer, "ganggarrison.com", 29944)
+        udp_send(lobbyBuffer, constants.LOBBY_SERVER_HOST, constants.LOBBY_SERVER_PORT)
         buffer_destroy(lobbyBuffer)
-       
+    def GameServerEndStep(self):
+        joiningSocket = socket_accept(self.tcpListener)
+        if (joiningSocket >= 0):
+            print "hi, bye"
+            write_ubyte(joiningSocket, KICK)
+            socket_send(joiningSocket)
+            socket_destroy(joiningSocket)
         
         
 if __name__ == '__main__':
     s = GameServer()
     while True:
-        s.GameServerStep()
+        s.GameServerBeginStep()
+        s.GameServerEndStep()
