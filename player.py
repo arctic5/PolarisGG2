@@ -1,14 +1,16 @@
+from constants import *
+
 class Player:
-    def __init__:
+    def __init__(self):
         object = -1
         team = TEAM_SPECTATOR
         player_class = CLASS_SCOUT
         socket = -1
         name = ""
-        kicked = false
-
+        kicked = False
+        stats = []
         #client setting stuff set to defaults
-        queueJump = false
+        queueJump = False
 
         #stat tracking array
         stats[KILLS] = 0
@@ -48,4 +50,4 @@ class Player:
         humiliated=0
         
         #Sentries for Engies
-        sentry = noone
+        sentry = None

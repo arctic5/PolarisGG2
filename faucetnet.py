@@ -1,5 +1,7 @@
-global faucet
-faucet = cdll.LoadLibrary("faucetNetworking.dll")
+from ctypes import *
+
+global faucetnet
+faucetnet = cdll.LoadLibrary("faucetNetworking.dll")
 
 def buffer_create():
     return c_double(faucetnet.buffer_create())
@@ -12,11 +14,11 @@ def socket_error(handle):
 def tcp_connect(ip, port):
     return c_double(faucetnet.tcp_connect(ip, port))
 def write_ubyte(handle, value):
-    return c_double(write_ubyte(handle, value))
+    return c_double(faucetnet.write_ubyte(handle, value))
 def write_ushort(handle, value):
-    return c_double(write_ushort(handle, value))
+    return c_double(faucetnet.write_ushort(handle, value))
 def write_string(handle, value):
-    return c_double(write_string(handle, value))
+    return c_double(faucetnet.write_string(handle, value))
 def writeKeyValue(handle, key, value):
     if(len(key) > 255):
         print "ERROR: KEY TOO LONG"
