@@ -1,4 +1,3 @@
-from ctypes import *
 from forwarding import *
 from faucetnet import *
 from random import randint
@@ -24,19 +23,20 @@ parseUuid(constants.GG2_LOBBY_UUID, gg2lobbyId)
 hostingPort = 8190
 attemptPortForward = 1
 
+tcpListener = tcp_listen(hostingPort)
+
 class GameServer:
     def __init__(self):
-        tcpListener = -1
-        if (attemptPortForward == 1):
-            upnp_set_description("GG2 (TCP)")
-            discovery_error = upnp_discover(2000)
+        # if (attemptPortForward == 1):
+            # upnp_set_description("GG2 (TCP)")
+            # discovery_error = upnp_discover(2000)
         
-        if (upnp_error_string(discovery_error) != ""):
-            print upnp_error_string(discovery_error)
-        else:
-            forwarding_error = upnp_forward_port(str(hostingPort), str(hostingPort), "TCP", "0")
-            if (upnp_error_string(forwarding_error) != ""):
-                print upnp_error_string(forwarding_error)
+        # if (upnp_error_string(discovery_error) != ""):
+            # print upnp_error_string(discovery_error)
+        # else:
+            # forwarding_error = upnp_forward_port(str(hostingPort), str(hostingPort), "TCP", "0")
+            # if (upnp_error_string(forwarding_error) != ""):
+                # print upnp_error_string(forwarding_error)
         players = []
         serverSocket = -1
         
@@ -64,14 +64,13 @@ class GameServer:
         
         players.append(serverPlayer)
         
-        self.tcpListener = tcp_listen(hostingPort)
-        if(socket_has_error(self.tcpListener)==True):
-            print "Unable to host:",socket_error(self.tcpListener)
-            
-        serverSocket = tcp_connect("127.0.0.1", hostingPort)
+        print tcpListener
         
-        if(socket_has_error(serverSocket)==True):
-            print "Unable to connect to self. Epic fail, dude."
+        if(socket_has_error(tcpListener)):
+            print "Unable to host:",socket_error(tcpListener)
+            
+        print socket_error(tcpListener)
+            
         print "serving on port:",hostingPort
     def GameServerBeginStep(self):
         lobbyBuffer = buffer_create()
@@ -100,8 +99,9 @@ class GameServer:
         udp_send(lobbyBuffer, constants.LOBBY_SERVER_HOST, constants.LOBBY_SERVER_PORT)
         buffer_destroy(lobbyBuffer)
     def GameServerEndStep(self):
-        joiningSocket = socket_accept(self.tcpListener)
-        if (joiningSocket >= 0):
+        joiningSocket = socket_accept(tcpListener)
+        if (joiningSocket > 0):
+            print socket_remote_ip(joiningSocket)
             print "hi, bye"
             write_ubyte(joiningSocket, KICK)
             socket_send(joiningSocket)
@@ -109,7 +109,7 @@ class GameServer:
         
         
 if __name__ == '__main__':
-    s = GameServer()
+    server = GameServer()
     while True:
-        s.GameServerBeginStep()
-        s.GameServerEndStep()
+        server.GameServerBeginStep()
+        server.GameServerEndStep()

@@ -16,12 +16,16 @@ def tcp_connect(ip, port):
     return c_double(faucetnet.tcp_connect(ip, port))
     
 def socket_has_error(handle):
-    return c_double(faucetnet.socket_has_error(handle))
+    return faucetnet.socket_has_error(handle)
     
 def socket_error(handle):
     faucetnet.socket_error.restype = c_char_p
     return faucetnet.socket_error(handle)
 
+def socket_remote_ip(handle):
+    faucetnet.socket_remote_ip.restype = c_char_p
+    return faucetnet.socket_remote_ip(handle)
+    
 def socket_accept(handle):
     faucetnet.socket_accept.restype = c_double
     return faucetnet.socket_accept(handle)
@@ -29,6 +33,8 @@ def socket_accept(handle):
 def socket_send(handle):
     return c_double(faucetnet.socket_send(handle))
 
+def socket_receivebuffer_size(handle):
+    return c_double(faucetnet.socket_receivebuffer_size(handle))
 def socket_destroy(handle):
     return c_double(faucetnet.socket_destroy(handle))
     
