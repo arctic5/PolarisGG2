@@ -1,18 +1,18 @@
 from faucetnet import *
 from ctypes import *
 
-global protocolUuid
-global gg2lobbyId
+# global protocolUuid
+# global gg2lobbyId
 
-dllStartup()
+print dllStartup()
 
-protocolUuid = c_double(faucetnet.buffer_create()).value
+protocolUuid = c_double(buffer_create()).value
 
-print protocolUuid
+#print protocolUuid
 
-gg2lobbyId = c_double(faucetnet.buffer_create()).value
+gg2lobbyId = c_double(buffer_create()).value
 
-print gg2lobbyId
+#print gg2lobbyId
 hostingPort = 0
 print hostingPort
 tcpListener = tcp_listen(hostingPort)
