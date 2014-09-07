@@ -1,13 +1,13 @@
 from ctypes import *
 
-global faucetnet
+#global faucetnet
 faucetnet = cdll.LoadLibrary("faucetNetworking.dll")
 
 def dllStartup():
-    return c_double(faucetnet.dllStartup())
-dllStartup()
+    return faucetnet.dllStartup()
+
 def buffer_create():
-    return c_double(faucetnet.buffer_create())
+    return c_double.in_dll(faucetnet, buffer_create())
     
 def tcp_listen(port):
     return faucetnet.tcp_listen(port)
@@ -51,7 +51,8 @@ def write_buffer(destHandle, bufferHandle):
     return c_double(faucetnet.write_buffer(destHandle, bufferHandle))
     
 def buffer_destroy(bufferHandle):
-    return c_double(faucetnet.buffer_destroy(bufferHandle))
+    #faucetnet.buffer_destroy.argtype = c_double
+    return c_double(faucetnet.buffer_destroy(bufferHandle)).value
     
 def udp_send(handle, host, port):
     return c_double(faucetnet.udp_send(handle, host, port))
