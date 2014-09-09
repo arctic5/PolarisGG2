@@ -37,20 +37,18 @@ def write_float(buf, data):
 def write_double(buf, data):
     return buf.write("d", data)
 def read_ubyte(buf):
-    return buf.read("B")
+    return buf.read("B")[0]
 def read_byte(buf):
-    return buf.read("b")
+    return buf.read("b")[0]
 def read_ushort(buf):
-    return buf.read("H")
+    return buf.read("H")[0]
 def read_short(buf):
-    return buf.read("h")
+    return buf.read("h")[0]
 def read_uint(buf):
-    return buf.read("I")
+    return buf.read("I")[0]
 def read_int(buf):
-    return buf.read("i")
+    return buf.read("i")[0]
 def read_float(buf):
-    return buf.read("f")
+    return buf.read("f")[0]
 def read_double(buf):
-    return buf.read("d")
-
-    
+    return buf.read("d")[0]
