@@ -6,9 +6,8 @@ class Buffer:
         # > big
         self.endianness = "<"
         self.bufferString = ""
-        return self.id()
     def write(self, type, data):
-        self.bufferString += str(struct.pack(self.endianness + type, data)
+        self.bufferString += str(struct.pack(self.endianness + type, data))
         return 0
     def read(self, type):
         if (self.pos >= len(self.bufferString)):
