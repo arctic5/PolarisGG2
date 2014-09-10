@@ -50,3 +50,23 @@ def read_float(buf):
     return buf.read("f")
 def read_double(buf):
     return buf.read("d")
+#slightly more complicated thing for string
+#maybe even overcomplicated but whatever
+def write_string(buf, string):
+    format = ''
+    size = len(str(string))
+    while (size > 0):
+        format += 'c'
+        size -= 1
+    data = list(string)
+    buf.bufferString += str(struct.pack(buf.endianness + format, *data))
+    return buf.bufferString
+def read_string(buf, size):
+    sizeBkp = size
+    format = ''
+    while (size > 0):
+        format += 'c'
+        size -= 1
+    str = struct.unpack_from(buf.endianness + format, buf.bufferString, buf.pos)
+    buf.pos += struct.calcsize(buf.endianness + format)
+    return ''.join(str)
