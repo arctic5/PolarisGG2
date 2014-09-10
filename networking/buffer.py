@@ -62,7 +62,6 @@ def write_string(buf, string):
     buf.bufferString += str(struct.pack(buf.endianness + format, *data))
     return buf.bufferString
 def read_string(buf, size):
-    sizeBkp = size
     format = ''
     while (size > 0):
         format += 'c'
