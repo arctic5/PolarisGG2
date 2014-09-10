@@ -1,10 +1,6 @@
 #from networking from buffer import *
 import socket
-global tcpListener
-
 hostingPort = 8190
-attemptPortForward = 1
-
 try:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 except socket.error as msg:

@@ -1,17 +1,10 @@
 from networking import buffer 
 import socket
-global tcpListener
-
 hostingPort = 8190
-attemptPortForward = 1
-
 try:
     tcpListener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 except socket.error as msg:
     print "error"
-
-
-
 class ServerTest:
     def __init__(self):
         serverSocket = -1
