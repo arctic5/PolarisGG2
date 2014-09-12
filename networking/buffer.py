@@ -1,4 +1,6 @@
 import struct
+import uuid
+
 class Buffer:
     def __init__(self):
         self.pos = 0
@@ -11,7 +13,7 @@ class Buffer:
         return 0
     def read(self, type):
         if (self.pos >= len(self.bufferString)):
-            return -1
+            return None
         else:
             r = struct.unpack_from(self.endianness + type, self.bufferString, self.pos)
             self.pos += struct.calcsize(self.endianness + type)
@@ -34,6 +36,8 @@ def write_float(buf, data):
     return buf.write("f", data)
 def write_double(buf, data):
     return buf.write("d", data)
+def write_directly_to_buffer(buf, data):
+    buf.bufferString += data
 def read_ubyte(buf):
     return buf.read("B")
 def read_byte(buf):
@@ -54,18 +58,34 @@ def read_double(buf):
 #maybe even overcomplicated but whatever
 def write_string(buf, string):
     format = ''
-    size = len(str(string))
-    while (size > 0):
-        format += 'c'
-        size -= 1
+    while (len(format) < len(str(string))):
+        format += 's'
     data = list(string)
-    buf.bufferString += str(struct.pack(buf.endianness + format, *data))
-    return buf.bufferString
+    write_directly_to_buffer(buf, str(struct.pack(buf.endianness + format, *data)))
+    return 0
 def read_string(buf, size):
     format = ''
-    while (size > 0):
-        format += 'c'
-        size -= 1
+    while (len(format) < size):
+        format += 's'
     str = struct.unpack_from(buf.endianness + format, buf.bufferString, buf.pos)
     buf.pos += struct.calcsize(buf.endianness + format)
     return ''.join(str)
+def buffer_clear(buf):
+    buf.bufferString = ''
+    
+#that other crap gg2 uses
+def writeKeyValue(handle, key, value):
+    if(len(key) > 255):
+        print "ERROR: KEY TOO LONG"
+    if(len(value) > 65535):
+        value = value[:65535]
+    write_ubyte(handle, len(key))
+    write_string(handle, key)
+    write_ushort(handle, len(value))
+    write_string(handle, value)
+    return 0
+    
+def parseUuid(uuidString, buf):
+    ID = uuid.UUID(uuidString)
+    write_directly_to_buffer(buf, ID.get_bytes())
+    return 0
