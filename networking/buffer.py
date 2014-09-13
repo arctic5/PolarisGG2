@@ -58,10 +58,8 @@ def read_double(buf):
 #maybe even overcomplicated but whatever
 def write_string(buf, string):
     format = ''
-    while (len(format) < len(str(string))):
-        format += 's'
-    data = list(string)
-    write_directly_to_buffer(buf, str(struct.pack(buf.endianness + format, *data)))
+    format += str(len(string)) + 's'
+    write_directly_to_buffer(buf, str(struct.pack(buf.endianness + format, string)))
     return 0
 def read_string(buf, size):
     format = ''
@@ -87,6 +85,7 @@ def writeKeyValue(handle, key, value):
     
 def parseUuid(uuidString, buf):
     ID = uuid.UUID(uuidString)
+    print type(ID.get_bytes())
     write_directly_to_buffer(buf, ID.get_bytes())
     return 0
 def buffer_destroy(buf):

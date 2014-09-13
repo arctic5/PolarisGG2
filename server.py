@@ -1,6 +1,6 @@
 from networking import buffer
 from random import randint
-from player import *
+import player
 import socket
 import constants
 import time
@@ -56,6 +56,8 @@ def sendLobbyRegistration(asdf):
     #buffer.parseUuid("de7d74f8-455c-bc1b-3731-0519c44356dc", lobbyBuffer)
     lobbySocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     lobbySocket.sendto(lobbyBuffer.bufferString, (constants.LOBBY_SERVER_HOST, constants.LOBBY_SERVER_PORT))
+    print "sent registration"
+    asdf.last_sync = time.clock()
     #udp_send(lobbyBuffer, constants.LOBBY_SERVER_HOST, constants.LOBBY_SERVER_PORT)
     buffer.buffer_destroy(lobbyBuffer)
 
@@ -92,7 +94,7 @@ class GameServer:
         self.impendingMapChange = -1 
         self.syncTimer = 0; 
         
-        serverPlayer = Player()
+        serverPlayer = player.Player()
         
         serverPlayer.name = "HOST (CHANGE THIS LATER)";
         
@@ -112,11 +114,16 @@ class GameServer:
     def GameServerEndStep(self):
         try:
             joiningSocket,joiningIP = global_tcpListener.accept()
-            print "got a connection!"
-            print joiningIP
+            print "got a connection from", joiningIP[0]
             buffer.write_ubyte(global_sendBuffer, constants.KICK)
-            buffer.write_ubyte(global_sendBuffer, constants.KICK_MULTI_CLIENT)
-            joiningSocket.sendall(global_sendBuffer)
+            #buffer.write_ubyte(global_sendBuffer, constants.KICK_MULTI_CLIENT)
+            try:
+                joiningSocket.send(global_sendBuffer.bufferString)
+            except:
+                print joiningSocket.error
+            print "CLIENT KICKED"
+            time.sleep(1)
+            print "CLIENT SENT:", joiningSocket.recv(1024)
             joiningSocket.close()
         except:
             pass
