@@ -89,3 +89,7 @@ def parseUuid(uuidString, buf):
     ID = uuid.UUID(uuidString)
     write_directly_to_buffer(buf, ID.get_bytes())
     return 0
+def buffer_destroy(buf):
+    buf = None
+    del buf
+    return 0

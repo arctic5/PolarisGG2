@@ -1,32 +1,63 @@
-from forwarding import *
-from faucetnet import *
+from networking import buffer
 from random import randint
 from player import *
-from ctypes import *
+import socket
 import constants
+import time
 
+# is there a better way to do this?
+global global_players
+global global_tcpListener
+global global_serverSocket
+global global_attemptPortForward
+global global_hostingPort
+global global_gg2lobbyId
+global global_protocolUuid
+global global_sendBuffer
 
+global_protocolUuid = buffer.buffer_create()
+buffer.parseUuid(constants.PROTOCOL_UUID, global_protocolUuid) 
 
-#gg2dll = cdll.LoadLibrary("GG2DLL.dll")
+global_gg2lobbyId = buffer.buffer_create()
+buffer.parseUuid(constants.GG2_LOBBY_UUID, global_gg2lobbyId)
 
-global players
-global tcpListener
-global serverSocket
-global attemptPortForward
-global hostingPort
-global gg2lobbyId
-global protocolUuid
+global_sendBuffer = buffer.buffer_create()
 
-protocolUuid = buffer_create()
-#parseUuid(constants.PROTOCOL_UUID, protocolUuid) 
+print "enter a port"
+global_hostingPort = input()
+global_attemptPortForward = 1
 
-gg2lobbyId = buffer_create()
-#parseUuid(constants.GG2_LOBBY_UUID, gg2lobbyId)
+global_tcpListener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-hostingPort = 8190
-attemptPortForward = 1
-
-tcpListener = tcp_listen(hostingPort)
+def sendLobbyRegistration(asdf):
+    lobbyBuffer = buffer.buffer_create()
+    #set_little_endian(lobbyBuffer, False)
+    lobbyBuffer.endianness = constants.ENDIAN_BIG
+    
+    buffer.parseUuid("b5dae2e8-424f-9ed0-0fcb-8c21c7ca1352", lobbyBuffer)
+    buffer.write_directly_to_buffer(lobbyBuffer, asdf.serverId.bufferString)
+    buffer.write_directly_to_buffer(lobbyBuffer, global_gg2lobbyId.bufferString)
+    buffer.write_ubyte(lobbyBuffer, 0) # TCP
+    buffer.write_ushort(lobbyBuffer, global_hostingPort) # playerLimit
+    buffer.write_ushort(lobbyBuffer, 10) # noOfPlayers
+    buffer.write_ushort(lobbyBuffer, 0) # Number of bots
+    buffer.write_ushort(lobbyBuffer, 1) # serverPassword
+    buffer.write_ushort(lobbyBuffer, 7) # Number of Key/Value pairs that follow
+    buffer.writeKeyValue(lobbyBuffer, "name", "POLARIS") # serverName
+    buffer.writeKeyValue(lobbyBuffer, "game", "POLARIS") #GAME_NAME_STRING
+    buffer.writeKeyValue(lobbyBuffer, "game_short", "POLARIS") 
+    buffer.writeKeyValue(lobbyBuffer, "game_ver", "4654765")
+    buffer.writeKeyValue(lobbyBuffer, "game_url", "1337")
+    buffer.writeKeyValue(lobbyBuffer, "map", "GAY_GAY")
+    buffer.write_ubyte(lobbyBuffer, len("protocol_id"))
+    buffer.write_string(lobbyBuffer, "protocol_id")
+    buffer.write_ushort(lobbyBuffer, 16)
+    buffer.write_directly_to_buffer(lobbyBuffer, global_protocolUuid.bufferString)
+    #buffer.parseUuid("de7d74f8-455c-bc1b-3731-0519c44356dc", lobbyBuffer)
+    lobbySocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    lobbySocket.sendto(lobbyBuffer.bufferString, (constants.LOBBY_SERVER_HOST, constants.LOBBY_SERVER_PORT))
+    #udp_send(lobbyBuffer, constants.LOBBY_SERVER_HOST, constants.LOBBY_SERVER_PORT)
+    buffer.buffer_destroy(lobbyBuffer)
 
 class GameServer:
     def __init__(self):
@@ -40,81 +71,67 @@ class GameServer:
             # forwarding_error = upnp_forward_port(str(hostingPort), str(hostingPort), "TCP", "0")
             # if (upnp_error_string(forwarding_error) != ""):
                 # print upnp_error_string(forwarding_error)
-        # players = []
-        # serverSocket = -1
+        global_players = []
+        global_serverSocket = -1
         
-        # serverId = buffer_create()
-        # self.serverbalance=0
-        # self.balancecounter=0
-        # self.frame = 0
-        # self.updatePlayer = 1
-        # self.syncTimer = 0
-        # self.map_rotation = []
+        self.serverbalance=0
+        self.balancecounter=0
+        self.frame = 0
+        self.updatePlayer = 1
+        self.syncTimer = 0
+        self.map_rotation = []
         
-        # for i in range(0,16):
-            # write_ubyte(serverId, randint(0,255));
+        self.serverId = buffer.buffer_create()
+        for i in range(0,16):
+            buffer.write_ubyte(self.serverId, randint(0,255));
             
-        # self.serverbalance=0
-        # self.balancecounter=0
-        # self.frame = 0
-        # self.updatePlayer = 1
-        # self.impendingMapChange = -1 
-        # self.syncTimer = 0; 
+        self.serverbalance=0
+        self.balancecounter=0
+        self.frame = 0
+        self.updatePlayer = 1
+        self.impendingMapChange = -1 
+        self.syncTimer = 0; 
         
-        # serverPlayer = Player()
+        serverPlayer = Player()
         
-        # serverPlayer.name = "HOST (CHANGE THIS LATER)";
+        serverPlayer.name = "HOST (CHANGE THIS LATER)";
         
-        # players.append(serverPlayer)
+        global_players.append(serverPlayer)
         
-        ttcpListener = c_double(1)
+        global_tcpListener.bind(("127.0.0.1", global_hostingPort))
+        global_tcpListener.listen(1)
+        global_tcpListener.setblocking(0)
         
-        print ttcpListener
-        # print type(ttcpListener)
-        # if(socket_has_error(tcpListener)):
-            # print "Unable to host:",socket_error(tcpListener)
+        self.last_sync = time.clock()
+        
+        print "serving on port:",global_hostingPort
+        sendLobbyRegistration(self)
+    def GameServerBeginStep(self):
+        if (self.last_sync+30 <= time.clock()):
+            sendLobbyRegistration(self)
+    def GameServerEndStep(self):
+        try:
+            joiningSocket,joiningIP = global_tcpListener.accept()
+            print "got a connection!"
+            print joiningIP
+            buffer.write_ubyte(global_sendBuffer, constants.KICK)
+            buffer.write_ubyte(global_sendBuffer, constants.KICK_MULTI_CLIENT)
+            joiningSocket.sendall(global_sendBuffer)
+            joiningSocket.close()
+        except:
+            pass
             
-        # print socket_error(tcpListener)
-            
-        # print "serving on port:",hostingPort
-    # def GameServerBeginStep(self):
-        # lobbyBuffer = buffer_create()
-        # set_little_endian(lobbyBuffer, False)
-        
-        # parseUuid("b5dae2e8-424f-9ed0-0fcb-8c21c7ca1352", lobbyBuffer)
-        # write_buffer(lobbyBuffer, 1)
-        # write_buffer(lobbyBuffer, gg2lobbyId)
-        # write_ubyte(lobbyBuffer, 0) # TCP
-        # write_ushort(lobbyBuffer, hostingPort) # playerLimit
-        # write_ushort(lobbyBuffer, 1337) # noOfPlayers
-        # write_ushort(lobbyBuffer, 1337) # Number of bots
-        # write_ushort(lobbyBuffer, 1) # serverPassword
-        # write_ushort(lobbyBuffer, 7) # Number of Key/Value pairs that follow
-        # writeKeyValue(lobbyBuffer, "name", "POLARIS") # serverName
-        # writeKeyValue(lobbyBuffer, "game", "POLARIS") #GAME_NAME_STRING
-        # writeKeyValue(lobbyBuffer, "game_short", "POLARIS") 
-        # writeKeyValue(lobbyBuffer, "game_ver", "4654765")
-        # writeKeyValue(lobbyBuffer, "game_url", "1337")
-        # writeKeyValue(lobbyBuffer, "map", "GAY_GAY")
-        # write_ubyte(lobbyBuffer, len("protocol_id"))
-        # write_string(lobbyBuffer, "protocol_id")
-        # write_ushort(lobbyBuffer, 16)
-        # parseUuid("de7d74f8-455c-bc1b-3731-0519c44356dc", lobbyBuffer)
-        
-        # udp_send(lobbyBuffer, constants.LOBBY_SERVER_HOST, constants.LOBBY_SERVER_PORT)
-        # buffer_destroy(lobbyBuffer)
-    # def GameServerEndStep(self):
-        # joiningSocket = socket_accept(tcpListener)
         # if (joiningSocket > 0):
             # print socket_remote_ip(joiningSocket)
             # print "hi, bye"
-            # write_ubyte(joiningSocket, KICK)
+            # buffer.write_ubyte(joiningSocket, KICK)
             # socket_send(joiningSocket)
             # socket_destroy(joiningSocket)
-        
+        # pass
         
 if __name__ == '__main__':
     server = GameServer()
-    # while True:
-        # server.GameServerBeginStep()
-        # server.GameServerEndStep()
+    while True:
+        server.GameServerBeginStep()
+        server.GameServerEndStep()
+        time.sleep(constants.PHYSICS_TIMESTEP)
