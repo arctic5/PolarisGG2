@@ -1,12 +1,13 @@
 import struct
 import uuid
+import sys
+sys.path.append("../")
+import constants
 
 class Buffer:
     def __init__(self):
         self.pos = 0
-        # < small
-        # > big
-        self.endianness = "<"
+        self.endianness = constants.ENDIAN_LITTLE
         self.bufferString = ""
     def write(self, type, data):
         self.bufferString += str(struct.pack(self.endianness + type, data))
@@ -85,7 +86,6 @@ def writeKeyValue(handle, key, value):
     
 def parseUuid(uuidString, buf):
     ID = uuid.UUID(uuidString)
-    print type(ID.get_bytes())
     write_directly_to_buffer(buf, ID.get_bytes())
     return 0
 def buffer_destroy(buf):
