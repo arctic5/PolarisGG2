@@ -1,0 +1,1 @@
+tsc server.ts --module commonjs
