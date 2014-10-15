@@ -1,8 +1,5 @@
 import struct
 import uuid
-# import sys
-# sys.path.append("../")
-#import constants
 
 class Buffer:
     def __init__(self):

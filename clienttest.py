@@ -9,8 +9,11 @@ except socket.error as msg:
 class ClientTest:
     def __init__(self):
         sock.connect(("127.0.0.1", hostingPort))
+        print "connect"
         sock.sendall("HIIIIIIII")
+        print "send"
         data = sock.recv(1024)
+        print "recv"
         sock.close()
         print 'Received', repr(data)
 if __name__ == '__main__':

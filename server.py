@@ -1,21 +1,17 @@
-from networking import buffer, tcp, lobby
+from buffer import *
 from random import randint
 import player
 import socket
 import constants
 import time
+import sys
 
 # is there a better way to do this?
 global global_attemptPortForward
 
-
-
-global_sendBuffer = buffer.buffer_create()
-
 print "enter a port"
 hostingPort = input()
 global_attemptPortForward = 1
-
 
 class GameServer:
     def __init__(self, port):
@@ -31,11 +27,12 @@ class GameServer:
                 # print upnp_error_string(forwarding_error)
                 
         # server vars
-        self.protocolUuid = buffer.buffer_create()
-        buffer.parseUuid(constants.PROTOCOL_UUID, self.protocolUuid) 
+        self.tcpListener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.protocolUuid = buffer_create()
+        parseUuid(constants.PROTOCOL_UUID, self.protocolUuid) 
 
-        self.gg2lobbyId = buffer.buffer_create()
-        buffer.parseUuid(constants.GG2_LOBBY_UUID, self.gg2lobbyId)
+        self.gg2lobbyId = buffer_create()
+        parseUuid(constants.GG2_LOBBY_UUID, self.gg2lobbyId)
         
         self.serverbalance=0
         self.balancecounter=0
@@ -43,9 +40,9 @@ class GameServer:
         self.updatePlayer = 1
         self.syncTimer = 0
         self.map_rotation = []
-        self.serverId = buffer.buffer_create()
+        self.serverId = buffer_create()
         for i in range(0,16):
-            buffer.write_ubyte(self.serverId, randint(0,255));
+            write_ubyte(self.serverId, randint(0,255));
         self.serverbalance=0
         self.balancecounter=0
         self.frame = 0
@@ -59,40 +56,47 @@ class GameServer:
         
         # networking stuff
         self.hostingPort = port
-        self.tcpListener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.tcpListener.bind(("", port))
-        self.tcpListener.listen(10)
+        try:
+            self.tcpListener.bind(("127.0.0.1", hostingPort))
+            self.tcpListener.listen(1)
+            self.tcpListener.setblocking(0)
+        except socket.error, (value,message): 
+            if (self.tcpListener):
+                self.tcpListener.close()
+            print "Could not open socket: " + message 
+            sys.exit(1)
         self.tcpListener.setblocking(False)
-        self.sendbuffer = []
+        self.sendbuffer = buffer_create()
         
         self.last_sync = time.clock()
         
-        print "serving on port:",port
-        lobby.sendLobbyRegistration(self)
+        print "serving on port:",self.hostingPort
+        self.firstSend = -1
     def GameServerBeginStep(self):
-        if (self.last_sync+45 <= time.clock()):
-            lobby.sendLobbyRegistration(self)
+        # if (self.last_sync+45 <= time.clock()):
+            # lobby.sendLobbyRegistration(self)
+        pass
     def GameServerEndStep(self):
+        # if (self.firstSend == -1):
+            # time.sleep(10)
+            # lobby.sendLobbyRegistration(self)
         try:
-            self.joiningSocket, self.joiningIP = global_tcpListener.accept()
+            self.joiningSocket, self.joiningIP = self.tcpListener.accept()
             print "got a connection from", self.joiningIP[0]
-            buffer.write_ubyte(self.sendBuffer, constants.KICK)
-            #buffer.write_ubyte(global_sendBuffer, constants.KICK_MULTI_CLIENT)
             try:
-                self.joiningSocket.send(self.sendBuffer.bufferString)
-                tcp.socket_send(self.joiningSocket, self.sendBuffer)
+                write_ubyte(self.sendBuffer, 37)
+                print self.sendBuffer.bufferString
+                self.data = self.joiningSocket.recv(1024)
+                self.joiningSocket.sendall(data)
+                self.joiningSocket.close()
             except:
-                print self.joiningSocket.error
-            print "CLIENT KICKED"
-            time.sleep(1)
-            print "CLIENT SENT:", self.joiningSocket.recv(constants.MAX_PACKET_SIZE)
-            self.joiningSocket.close()
+                pass
         except:
             pass
-        
+            # no connection
 if __name__ == '__main__':
     server = GameServer(hostingPort)
     while True:
         server.GameServerBeginStep()
         server.GameServerEndStep()
-        time.sleep(constants.PHYSICS_TIMESTEP)
+        #time.sleep(constants.PHYSICS_TIMESTEP)
