@@ -1,4 +1,4 @@
-from buffer import *
+from networking import buffer
 from random import randint
 import player
 import socket
@@ -28,11 +28,11 @@ class GameServer:
                 
         # server vars
         self.tcpListener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.protocolUuid = buffer_create()
-        parseUuid(constants.PROTOCOL_UUID, self.protocolUuid) 
+        self.protocolUuid = buffer.buffer_create()
+        buffer.parseUuid(constants.PROTOCOL_UUID, self.protocolUuid) 
 
-        self.gg2lobbyId = buffer_create()
-        parseUuid(constants.GG2_LOBBY_UUID, self.gg2lobbyId)
+        self.gg2lobbyId = buffer.buffer_create()
+        buffer.parseUuid(constants.GG2_LOBBY_UUID, self.gg2lobbyId)
         
         self.serverbalance=0
         self.balancecounter=0
@@ -40,9 +40,9 @@ class GameServer:
         self.updatePlayer = 1
         self.syncTimer = 0
         self.map_rotation = []
-        self.serverId = buffer_create()
+        self.serverId = buffer.buffer_create()
         for i in range(0,16):
-            write_ubyte(self.serverId, randint(0,255));
+            buffer.write_ubyte(self.serverId, randint(0,255));
         self.serverbalance=0
         self.balancecounter=0
         self.frame = 0
@@ -66,7 +66,7 @@ class GameServer:
             print "Could not open socket: " + message 
             sys.exit(1)
         self.tcpListener.setblocking(False)
-        self.sendbuffer = buffer_create()
+        self.sendBuffer = buffer.buffer_create()
         
         self.last_sync = time.clock()
         
@@ -84,11 +84,12 @@ class GameServer:
             self.joiningSocket, self.joiningIP = self.tcpListener.accept()
             print "got a connection from", self.joiningIP[0]
             try:
-                write_ubyte(self.sendBuffer, 37)
+                buffer.write_ubyte(self.sendBuffer, 37)
                 print self.sendBuffer.bufferString
                 self.data = self.joiningSocket.recv(1024)
-                self.joiningSocket.sendall(data)
+                self.joiningSocket.sendall(self.sendBuffer.bufferString)
                 self.joiningSocket.close()
+                buffer.buffer_clear(self.sendBuffer)
             except:
                 pass
         except:
