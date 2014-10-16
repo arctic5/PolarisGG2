@@ -1,10 +1,12 @@
 from networking import buffer
+from networking import lobby
 from random import randint
 import player
 import socket
 import constants
 import time
 import sys
+import ctypes
 
 # is there a better way to do this?
 global global_attemptPortForward
@@ -73,20 +75,20 @@ class GameServer:
         print "serving on port:",self.hostingPort
         self.firstSend = -1
     def GameServerBeginStep(self):
-        # if (self.last_sync+45 <= time.clock()):
-            # lobby.sendLobbyRegistration(self)
-        pass
+        if (self.last_sync+45 <= time.clock()):
+            lobby.sendLobbyRegistration(self)
     def GameServerEndStep(self):
-        # if (self.firstSend == -1):
-            # time.sleep(10)
-            # lobby.sendLobbyRegistration(self)
+        if (self.firstSend == -1):
+            #TODO THIS IS A DEBUG THING REMOVE LATER
+            time.sleep(10)
+            lobby.sendLobbyRegistration(self)
         try:
             self.joiningSocket, self.joiningIP = self.tcpListener.accept()
             print "got a connection from", self.joiningIP[0]
             try:
-                buffer.write_ubyte(self.sendBuffer, 37)
+                buffer.write_ubyte(self.sendBuffer, constants.KICK)
                 print self.sendBuffer.bufferString
-                self.data = self.joiningSocket.recv(1024)
+                self.data = self.joiningSocket.recv(constants.MAX_PACKET_SIZE)
                 self.joiningSocket.sendall(self.sendBuffer.bufferString)
                 self.joiningSocket.close()
                 buffer.buffer_clear(self.sendBuffer)
@@ -98,6 +100,9 @@ class GameServer:
 if __name__ == '__main__':
     server = GameServer(hostingPort)
     while True:
+        t0 = time.clock()
         server.GameServerBeginStep()
         server.GameServerEndStep()
-        #time.sleep(constants.PHYSICS_TIMESTEP)
+        time.sleep(PHYSICS_TIMESTEP)
+        t1 = time.clock()
+        ctypes.windll.kernel32.SetConsoleTitleA("FPS: " + str(round(1.0 / (t1 - t0))))
