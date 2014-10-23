@@ -1,19 +1,51 @@
 from networking import buffer, lobby, tcp
 from random import randint
-import player
+from engine import player
 import socket
 import constants
 import time
 import sys
-import ctypes
 
 # is there a better way to do this?
-global global_attemptPortForward
 
 print "enter a port"
 hostingPort = input()
 global_attemptPortForward = 1
 
+class JoiningPlayer:
+    def __init__(self):
+        self.sock = -1
+        self.mapDownloadBuffer = -1
+
+        self.STATE_EXPECT_HELLO = 1 # Hello message: 17 bytes (HELLO+UUID)
+        self.STATE_EXPECT_MESSAGELEN = 2 # 1 byte Message length header 
+        self.STATE_EXPECT_NAME = 3
+        self.STATE_EXPECT_PASSWORD = 4
+        self.STATE_CLIENT_AUTHENTICATED = 5
+        self.STATE_EXPECT_COMMAND = 6
+        self.STATE_CLIENT_DOWNLOADING = 7
+
+        self.state = STATE_EXPECT_HELLO
+        self.expectedBytes = 17
+        self.lastContact = round(time.time() * 1000) # To allow implementing a timeout
+        self.cumulativeMapBytes = 0
+    def service_player(self):
+        self.newState = -1;
+        if (self.state == self.STATE_EXPECT_HELLO):
+            self.sameProtocol = (buffer.read_ubyte(self.sock.buffer) == constants.HELLO);
+            server.protocolUuid.pos = 0
+            
+            for i in range(0,4):
+                if (buffer.read_uint(self.sock.buffer) != buffer.read_uint(server.protocolUuid)):
+                    self.sameProtocol = False
+            if(not self.sameProtocol):
+                buffer.write_ubyte(self.sock.buffer, constants.INCOMPATIBLE_PROTOCOL);
+            elif (server.password != ""):
+                self.newState = self.STATE_CLIENT_AUTHENTICATED
+                self.expectedBytes = 0
+            else:
+                buffer.write_ubyte(self.sock.buffer, constants.PASSWORD_REQUEST);
+            # OK THIS IS WHERE I LEFT OFF WHEN I LAST DID SOMETHING
 class GameServer:
     def __init__(self, port):
         # if (attemptPortForward == 1):
@@ -54,6 +86,7 @@ class GameServer:
         serverPlayer = player.Player()
         serverPlayer.name = "HOST (CHANGE THIS LATER)";
         self.players.append(serverPlayer)
+        self.password = ""
         
         # networking stuff
         self.hostingPort = port
@@ -73,6 +106,12 @@ class GameServer:
         
         print "serving on port:",self.hostingPort
         self.firstSend = -1
+    def accecpt_player(self):
+        self.joiningSocketId, self.joiningIP = self.tcpListener.accept()
+        self.joiningSocket = tcp.Socket(self.joiningSocketId, self.joiningIP)
+        
+        self.joiningPlayer = JoiningPlayer()
+        self.joiningPlayer.sock = self.joiningSocket
     def GameServerBeginStep(self):
         if (self.last_sync+45 <= time.clock()):
             lobby.sendLobbyRegistration(self)
@@ -82,23 +121,17 @@ class GameServer:
             time.sleep(10)
             lobby.sendLobbyRegistration(self)
         try:
-            self.joiningSocket, self.joiningIP = self.tcpListener.accept()
-            self.b = buffer.buffer_create()
-            print "got a connection from", self.joiningIP[0]
-            buffer.write_ubyte(self.b, constants.KICK)
-            self.data = self.joiningSocket.recv(constants.MAX_PACKET_SIZE)
-            tcp.send(self.joiningSocket, self.b)
-            self.joiningSocket.close()
-            buffer.buffer_destroy(self.b)
+            accecpt_player()
+            with(JoiningPlayer):
+                service_player()
         except:
             pass
             # no connection
 if __name__ == '__main__':
-    server = GameServer(hostingPort)
+    global server = GameServer(hostingPort)
     while True:
         t0 = time.clock()
         server.GameServerBeginStep()
         server.GameServerEndStep()
         time.sleep(PHYSICS_TIMESTEP)
         t1 = time.clock()
-        ctypes.windll.kernel32.SetConsoleTitleA("FPS: " + str(round(1.0 / (t1 - t0))))
