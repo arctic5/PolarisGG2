@@ -107,7 +107,7 @@ HP_PER_POINT = 800
 INTEL_MAX_TIMER = 900
 
 #take stuff from pygg2
-PHYSICS_TIMESTEP = 1/60
+PHYSICS_TIMESTEP = 1.0/60
 MAX_PACKET_SIZE = 2048
 
 #other stuff i need

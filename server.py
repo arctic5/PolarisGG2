@@ -1,5 +1,4 @@
-from networking import buffer
-from networking import lobby
+from networking import buffer, lobby, tcp
 from random import randint
 import player
 import socket
@@ -84,16 +83,13 @@ class GameServer:
             lobby.sendLobbyRegistration(self)
         try:
             self.joiningSocket, self.joiningIP = self.tcpListener.accept()
+            self.b = buffer.buffer_create()
             print "got a connection from", self.joiningIP[0]
-            try:
-                buffer.write_ubyte(self.sendBuffer, constants.KICK)
-                print self.sendBuffer.bufferString
-                self.data = self.joiningSocket.recv(constants.MAX_PACKET_SIZE)
-                self.joiningSocket.sendall(self.sendBuffer.bufferString)
-                self.joiningSocket.close()
-                buffer.buffer_clear(self.sendBuffer)
-            except:
-                pass
+            buffer.write_ubyte(self.b, constants.KICK)
+            self.data = self.joiningSocket.recv(constants.MAX_PACKET_SIZE)
+            tcp.send(self.joiningSocket, self.b)
+            self.joiningSocket.close()
+            buffer.buffer_destroy(self.b)
         except:
             pass
             # no connection

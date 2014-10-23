@@ -1,4 +1,4 @@
 import socket
 
-def socket_send(sock, buffer):
+def send(sock, buffer):
     sock.send(buffer.bufferString)
