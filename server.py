@@ -1,6 +1,7 @@
 from networking import buffer, lobby, tcp
 from random import randint
 from engine import player
+from faucetnet import *
 import socket
 import constants
 import time
@@ -32,19 +33,19 @@ class JoiningPlayer:
     def service_player(self):
         self.newState = -1;
         if (self.state == self.STATE_EXPECT_HELLO):
-            self.sameProtocol = (buffer.read_ubyte(self.sock.buffer) == constants.HELLO);
+            self.sameProtocol = (read_ubyte(self.sock) == constants.HELLO);
             server.protocolUuid.pos = 0
             
             for i in range(0,4):
-                if (buffer.read_uint(self.sock.buffer) != buffer.read_uint(server.protocolUuid)):
+                if (read_uint(self.sock) != read_uint(server.protocolUuid)):
                     self.sameProtocol = False
             if(not self.sameProtocol):
-                buffer.write_ubyte(self.sock.buffer, constants.INCOMPATIBLE_PROTOCOL);
+                write_ubyte(self.sock, constants.INCOMPATIBLE_PROTOCOL);
             elif (server.password != ""):
                 self.newState = self.STATE_CLIENT_AUTHENTICATED
                 self.expectedBytes = 0
             else:
-                buffer.write_ubyte(self.sock.buffer, constants.PASSWORD_REQUEST);
+                write_ubyte(self.sock, constants.PASSWORD_REQUEST);
             # OK THIS IS WHERE I LEFT OFF WHEN I LAST DID SOMETHING
 class GameServer:
     def __init__(self, port):
@@ -60,11 +61,11 @@ class GameServer:
                 # print upnp_error_string(forwarding_error)
                 
         # server vars
-        self.tcpListener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.protocolUuid = buffer.buffer_create()
+        self.tcpListener = tcp_listen(port)
+        self.protocolUuid = buffer_create()
         buffer.parseUuid(constants.PROTOCOL_UUID, self.protocolUuid) 
 
-        self.gg2lobbyId = buffer.buffer_create()
+        self.gg2lobbyId = buffer_create()
         buffer.parseUuid(constants.GG2_LOBBY_UUID, self.gg2lobbyId)
         
         self.serverbalance=0
@@ -73,9 +74,9 @@ class GameServer:
         self.updatePlayer = 1
         self.syncTimer = 0
         self.map_rotation = []
-        self.serverId = buffer.buffer_create()
+        self.serverId = buffer_create()
         for i in range(0,16):
-            buffer.write_ubyte(self.serverId, randint(0,255));
+            write_ubyte(self.serverId, randint(0,255));
         self.serverbalance=0
         self.balancecounter=0
         self.frame = 0
@@ -90,25 +91,14 @@ class GameServer:
         
         # networking stuff
         self.hostingPort = port
-        try:
-            self.tcpListener.bind(("127.0.0.1", hostingPort))
-            self.tcpListener.listen(1)
-            self.tcpListener.setblocking(0)
-        except socket.error, (value,message): 
-            if (self.tcpListener):
-                self.tcpListener.close()
-            print "Could not open socket: " + message 
-            sys.exit(1)
-        self.tcpListener.setblocking(False)
-        self.sendBuffer = buffer.buffer_create()
-        
+        self.sendBuffer = buffer_create()
         self.last_sync = time.clock()
         
         print "serving on port:",self.hostingPort
         self.firstSend = -1
     def accecpt_player(self):
-        self.joiningSocketId, self.joiningIP = self.tcpListener.accept()
-        self.joiningSocket = tcp.Socket(self.joiningSocketId, self.joiningIP)
+        self.joiningSocket = socket_accept(self.tcpListener)
+        self.ip = socket_remote_ip(self.joiningSocket)
         
         self.joiningPlayer = JoiningPlayer()
         self.joiningPlayer.sock = self.joiningSocket

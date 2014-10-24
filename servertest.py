@@ -1,36 +1,25 @@
-from buffer import *
-import socket
+# from buffer import *
+# import socket
+from faucetnet import *
+import constants
 hostingPort = 8190
 
 class ServerTest:
     def __init__(self):
-        try:
-            self.tcpListener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        except socket.error as msg:
+        self.tcpListener = tcp_listen(8190)
+        if (socket_has_error(self.tcpListener)):
             print "error"
-        self.tcpListener.bind(("127.0.0.1", hostingPort))
-        self.tcpListener.listen(1)
-        self.tcpListener.setblocking(0)
         print "serving on port:",hostingPort
         a = buffer_create()
     def step(self):
-        try:
-            self.joiningSocket, self.joiningIP = self.tcpListener.accept()
-            print "GOT A CONNECTION"
-            print "IP:", joiningIP
-            try:
-                write_ubyte(a, 7)
-            except:
-                raise
-            try:
-                self.data = self.joiningSocket.recv(1024)
-                self.joiningSocket.sendall(data)
-                self.joiningSocket.close()
-            except:
-                pass
-        except:
-            pass
-        
+        self.joiningSocket = socket_accept(self.tcpListener)
+        if (self.joiningSocket >= 0):
+            self.ip = socket_remote_ip(self.joiningSocket)
+            print ip
+            write_ubyte(self.joiningSocket, constants.KICK)
+            write_ubyte(self.joiningSocket, constants.KICK_MULTI_CLIENT)
+            socket_send(self.joiningSocket)
+            socket_destroy(self.joiningSocket)
 if __name__ == '__main__':
     server = ServerTest()
     while True:
