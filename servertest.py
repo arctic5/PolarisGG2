@@ -1,6 +1,5 @@
-# from buffer import *
-# import socket
-from faucetnet import *
+from faucet_networking.buffer import *
+from faucet_networking.socket import *
 import constants
 hostingPort = 8190
 
@@ -24,3 +23,4 @@ if __name__ == '__main__':
     server = ServerTest()
     while True:
         server.step()
+

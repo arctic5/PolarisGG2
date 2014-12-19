@@ -1,15 +1,4 @@
-from ctypes import *
-
-fct = CDLL("Faucet Networking.dll")
-
-fct.dllStartup()
-
-buffer_create = fct.buffer_create
-buffer_create.restype = c_double
-
-write_ubyte = fct.write_ubyte
-write_ubyte.argtypes = [c_double, c_double]
-write_ubyte.restype = c_double
+from faucet_networking.buffer import *
 
 a = buffer_create()
 b = buffer_create()
