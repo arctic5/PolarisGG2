@@ -1,11 +1,9 @@
 from faucet_networking import buffer, socket
 from random import randint
-from engine import player
-#from faucetnet import *
-import socket
 import constants
-import time
-import sys
+import engine
+import parseUuid
+
 
 # is there a better way to do this?
 
@@ -13,41 +11,7 @@ print "enter a port"
 hostingPort = input()
 global_attemptPortForward = 1
 
-class JoiningPlayer:
-    def __init__(self):
-        self.sock = -1
-        self.mapDownloadBuffer = -1
-
-        self.STATE_EXPECT_HELLO = 1 # Hello message: 17 bytes (HELLO+UUID)
-        self.STATE_EXPECT_MESSAGELEN = 2 # 1 byte Message length header 
-        self.STATE_EXPECT_NAME = 3
-        self.STATE_EXPECT_PASSWORD = 4
-        self.STATE_CLIENT_AUTHENTICATED = 5
-        self.STATE_EXPECT_COMMAND = 6
-        self.STATE_CLIENT_DOWNLOADING = 7
-
-        self.state = STATE_EXPECT_HELLO
-        self.expectedBytes = 17
-        self.lastContact = round(time.time() * 1000) # To allow implementing a timeout
-        self.cumulativeMapBytes = 0
-    def service_player(self):
-        self.newState = -1;
-        if (self.state == self.STATE_EXPECT_HELLO):
-            self.sameProtocol = (read_ubyte(self.sock) == constants.HELLO);
-            server.protocolUuid.pos = 0
-            
-            for i in range(0,4):
-                if (read_uint(self.sock) != read_uint(server.protocolUuid)):
-                    self.sameProtocol = False
-            if(not self.sameProtocol):
-                write_ubyte(self.sock, constants.INCOMPATIBLE_PROTOCOL);
-            elif (server.password != ""):
-                self.newState = self.STATE_CLIENT_AUTHENTICATED
-                self.expectedBytes = 0
-            else:
-                write_ubyte(self.sock, constants.PASSWORD_REQUEST);
-            # OK THIS IS WHERE I LEFT OFF WHEN I LAST DID SOMETHING
-class GameServer:
+class GameServer(engine.Entity):
     def __init__(self, port):
         # if (attemptPortForward == 1):
             # upnp_set_description("GG2 (TCP)")
@@ -61,12 +25,12 @@ class GameServer:
                 # print upnp_error_string(forwarding_error)
                 
         # server vars
-        self.tcpListener = tcp_listen(port)
-        self.protocolUuid = buffer_create()
-        buffer.parseUuid(constants.PROTOCOL_UUID, self.protocolUuid) 
+        self.tcpListener = socket.tcp_listen(port)
+        self.protocolUuid = buffer.buffer_create()
+        parseUuid.parseUuid(constants.PROTOCOL_UUID, self.protocolUuid) 
 
         self.gg2lobbyId = buffer_create()
-        buffer.parseUuid(constants.GG2_LOBBY_UUID, self.gg2lobbyId)
+        parseUuid.parseUuid(constants.GG2_LOBBY_UUID, self.gg2lobbyId)
         
         self.serverbalance=0
         self.balancecounter=0
@@ -102,13 +66,11 @@ class GameServer:
         
         self.joiningPlayer = JoiningPlayer()
         self.joiningPlayer.sock = self.joiningSocket
-    def GameServerBeginStep(self):
+    def begin_step(self):
         if (self.last_sync+45 <= time.clock()):
             lobby.sendLobbyRegistration(self)
-    def GameServerEndStep(self):
+    def end_step(self):
         if (self.firstSend == -1):
-            #TODO THIS IS A DEBUG THING REMOVE LATER
-            time.sleep(10)
             lobby.sendLobbyRegistration(self)
         try:
             accecpt_player()
@@ -117,11 +79,18 @@ class GameServer:
         except:
             pass
             # no connection
-if __name__ == '__main__':
-    server = GameServer(hostingPort)
-    while True:
-        t0 = time.clock()
-        server.GameServerBeginStep()
-        server.GameServerEndStep()
-        time.sleep(PHYSICS_TIMESTEP)
-        t1 = time.clock()
+    def ServerChangeMap():
+        
+    def ServerJoinUpdate(self, sock):
+        buffer.write_ubyte(sock, constants.JOIN_UPDATE)
+        buffer.write_ubyte(sock, len(self.players))
+        buffer.write_ubyte(sock, self.currentMapArea)
+
+        ServerChangeMap(self.currentMap, self.currentMapMD5, sock)
+
+        for (i in players):
+            ServerPlayerJoin(player.name, sock);
+            ServerPlayerChangeclass(i, player.clazz, argument0);
+            ServerPlayerChangeteam(i, player.team, argument0);
+
+global server = GameServer()

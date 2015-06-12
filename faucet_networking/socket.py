@@ -27,3 +27,7 @@ socket_send.restype = c_double
 socket_destroy = fct.socket_destroy
 socket_destroy.argtypes = [c_double]
 socket_destroy.restype = c_double
+
+udp_send = fct.udp_send
+udp_send.argtypes = [c_double]
+udp_send.restype = c_double

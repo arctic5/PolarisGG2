@@ -43,6 +43,10 @@ write_string = fct.write_string
 write_string.argtypes = [c_double, c_char_p]
 write_string.restype = c_double
 
+write_buffer = fct.write_buffer
+write_buffer.argtypes = [c_double, c_double]
+write_buffer.restype = c_double
+
 read_ubyte = fct.read_ubyte
 read_ubyte.argtypes = [c_double]
 read_ubyte.restype = c_double
