@@ -1,0 +1,3 @@
+[submodule "PyGG2"]
+	path = PyGG2
+	url = https://github.com/PyGG2/PyGG2/
