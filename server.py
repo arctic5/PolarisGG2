@@ -1,7 +1,7 @@
-from networking import buffer, lobby, tcp
+from faucet_networking import buffer, socket
 from random import randint
 from engine import player
-from faucetnet import *
+#from faucetnet import *
 import socket
 import constants
 import time
@@ -118,7 +118,7 @@ class GameServer:
             pass
             # no connection
 if __name__ == '__main__':
-    global server = GameServer(hostingPort)
+    server = GameServer(hostingPort)
     while True:
         t0 = time.clock()
         server.GameServerBeginStep()

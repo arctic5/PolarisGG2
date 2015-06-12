@@ -8,3 +8,9 @@ print b
 
 print write_ubyte(a, 1)
 print write_ubyte(b, 2)
+
+print read_ubyte(a, 1)
+print read_ubyte(b, 2)
+
+print read_ubyte(a, 1)
+print read_ubyte(b, 2)
